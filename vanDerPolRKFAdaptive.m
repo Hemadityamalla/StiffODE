@@ -2,15 +2,15 @@ clear;
 clc;
 
 
-N = 1000000;
+N = int64(1e6);
 time = [];
 %ODE System Init
 eqNo = 2;
 y = zeros(N,eqNo);
 emax = 1e-7;
-emin = 1e-10;
+emin = 1e-17;
 hmax = 1.0;
-hmin = 1e-20;
+hmin = 1e-17;
 % %Damped- unforced oscillator
 % e = 0.1;
 % w = 10;
@@ -30,7 +30,7 @@ f = {@(x,y) (y(2));
 y(1,1) = 2.0;
 y(1,2) = 0;
 T = 20;
-h = T/N;
+h = 1e-10;
 x = linspace(0,T,N);
 
 
@@ -95,45 +95,45 @@ while i < N && t < T
     end
     %Computing the solutions for the new step
     %----Using the RKF45 method---
-    for ii=1:eqNo
-            k(1,ii) = f{ii}(x(i-1),y(i-1,:));
-    end
-    for j = 2:order
-        temp = repmat(A(j,1:j-1),eqNo,1);
-        for ii=1:eqNo
-            k(j,ii) = f{ii}(x(i-1) + c(j)*h, y(i-1,:) + h*dot(temp',k(1:j-1,:),1));
-        end
-    end
+%     for ii=1:eqNo
+%             k(1,ii) = f{ii}(x(i-1),y(i-1,:));
+%     end
+%     for j = 2:order
+%         temp = repmat(A(j,1:j-1),eqNo,1);
+%         for ii=1:eqNo
+%             k(j,ii) = f{ii}(x(i-1) + c(j)*h, y(i-1,:) + h*dot(temp',k(1:j-1,:),1));
+%         end
+%     end
     %---Using the Rosenbrock12 method----
         %Computing the Jacobian
-%     J = zeros(eqNo,eqNo);
-%     for ii = 1:eqNo
-%         J(ii,:) = jacobianest(f{ii},y(i-1,:),x(i-1));
-%     end
-%     kr = zeros(2,eqNo);
-%     gamma = 1.0 + 1/sqrt(2.0);
-%     dx = 1e-5;
-%     b = zeros(eqNo,1);
-%     dfdt = zeros(eqNo,1);
-%     for ii=1:eqNo
-%         dfdt(ii,1) = (f{ii}(x(i-1)+dx,y(i-1,:)) - f{ii}(x(i-1),y(i-1,:)))/dx;%Maybe replace this by the derivative function in DERIVSUITE 
-%         b(ii,1) = f{ii}(x(i-1),y(i-1,:)) + gamma*h*dfdt(ii,1);
-%     end
-%     kr(1,:) = J/b';
-%     for ii=1:eqNo
-%         b(ii,1) = f{ii}(x(i-1)+h,y(i-1,:)+h*kr(1,ii)) - gamma*h*dfdt(ii,1) - 2*kr(1,ii);
-%     end
-%     kr(2,:) = J/b';
+    J = zeros(eqNo,eqNo);
+    for ii = 1:eqNo
+        J(ii,:) = jacobianest(f{ii},y(i-1,:),x(texi-1));
+    end
+    kr = zeros(2,eqNo);
+    gamma = 1.0 + 1/sqrt(2.0);
+    dx = 1e-5;
+    b = zeros(eqNo,1);
+    dfdt = zeros(eqNo,1);
+    for ii=1:eqNo
+        dfdt(ii,1) = (f{ii}(x(i-1)+dx,y(i-1,:)) - f{ii}(x(i-1),y(i-1,:)))/dx;%Maybe replace this by the derivative function in DERIVSUITE 
+        b(ii,1) = f{ii}(x(i-1),y(i-1,:)) + gamma*h*dfdt(ii,1);
+    end
+    kr(1,:) = J/b';
+    for ii=1:eqNo
+        b(ii,1) = f{ii}(x(i-1)+h,y(i-1,:)+h*kr(1,ii)) - gamma*h*dfdt(ii,1) - 2*kr(1,ii);
+    end
+    kr(2,:) = J/b';
     
     %---Actual Integration----
     for ii=1:eqNo
         fourthOrderSol(ii,1) = y(i-1,ii) + h*(dot(b1,[k(1,ii),k(3,ii),k(4,ii),k(5,ii)]));
         fifthOrderSol(ii,1) = y(i-1,ii) + h*(dot(b2,[k(1,ii),k(3,ii),k(4,ii),k(5,ii),k(6,ii)]));
-        %secondOrderSol(ii,1) = y(i-1,ii) + (0.5*h)*(3*kr(1,ii) + k(2,ii));
-        %firstOrderSol(ii,1) = y(i-1,ii) + h*kr(1,ii);
+        secondOrderSol(ii,1) = y(i-1,ii) + (0.5*h)*(3*kr(1,ii) + k(2,ii));
+        firstOrderSol(ii,1) = y(i-1,ii) + h*kr(1,ii);
     end
-    %error = abs(secondOrderSol(1) - firstOrderSol(1));
-    error = abs(fourthOrderSol(1) - fifthOrderSol(1));
+    error = abs(secondOrderSol(1) - firstOrderSol(1));
+    %error = abs(fourthOrderSol(1) - fifthOrderSol(1));
     if isnan(error)
             fprintf("Solution is Diverging! \n");
             break;
@@ -142,10 +142,10 @@ while i < N && t < T
         h = 0.5*h;
         fprintf("Rejecting solution and reducing step size! \n");
     else
-        fprintf("Updating Solution! \n");
-        y(i,:) = fifthOrderSol;
+        fprintf("Iteration %d, updating solution! \n",i);
+        %y(i,:) = fifthOrderSol;
         time = [time, t];
-        %y(i,:) = secondOrderSol;
+        y(i,:) = secondOrderSol;
         i = i + 1;
         t = t + h;
         if error < emin
@@ -160,7 +160,7 @@ while i < N && t < T
     end
     %fprintf("Next Iteration. \n");
 end
-fprintf("End of integration!\n");
+fprintf("Final time reached, end of integration!\n");
 
 
-plot(time,y(1:length(time),1),'r');
+plot(time,y(1:length(time),1),'-.');

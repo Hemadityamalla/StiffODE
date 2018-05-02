@@ -6,16 +6,16 @@ N = 4000;
 %ODE System Init
 eqNo = 2;
 y = zeros(N,eqNo);
-%Damped- unforced oscillator
-e = 0.1;
-w = 10;
-f = {@(x,y) (y(2));
-     @(x,y) -(2*e*w*y(2) + w^2*y(1))};
-y(1,1) = 0.02;
-y(1,2) = 0;
-T = 4.0;
-h = T/N;
-x = linspace(0,T,N);
+% %Damped- unforced oscillator
+% e = 0.1;
+% w = 10;
+% f = {@(x,y) (y(2));
+%      @(x,y) -(2*e*w*y(2) + w^2*y(1))};
+% y(1,1) = 0.02;
+% y(1,2) = 0;
+% T = 4.0;
+% h = T/N;
+% x = linspace(0,T,N);
 
 % %Non-stiff Van-der-Pol Oscillator
 % mu = 1.0;
@@ -27,15 +27,15 @@ x = linspace(0,T,N);
 % h = T/N;
 % x = linspace(0,T,N);
 
-% %Stiff Van-der-Pol Oscillator
-% mu = 1000.0;
-% f = {@(x,y) (y(2));
-%      @(x,y) (mu*(1.0 - y(1)^2)*y(2) - y(1))};
-% y(1,1) = 2.0;
-% y(1,2) = 0;
-% T = 3000;
-% h = T/N;
-% x = linspace(0,T,N);
+%Stiff Van-der-Pol Oscillator
+mu = 1000.0;
+f = {@(x,y) (y(2));
+     @(x,y) (mu*(1.0 - y(1)^2)*y(2) - y(1))};
+y(1,1) = 2.0;
+y(1,2) = 0;
+T = 3000;
+h = T/N;
+x = linspace(0,T,N);
  
  
 
