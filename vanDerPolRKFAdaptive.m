@@ -11,16 +11,16 @@ emax = 1e-7;
 emin = 1e-8;
 hmax = 1.0;
 hmin = 1e-5;
-%Damped- unforced oscillator
-e = 0.1;
-w = 10;
-f = {@(x,y) (y(2));
-     @(x,y) -(2*e*w*y(2) + w^2*y(1))};
-y(1,1) = 0.02;
-y(1,2) = 0;
-T = 4.0;
-h = 1e-2;
-x = linspace(0,T,N);
+% %Damped- unforced oscillator
+% e = 0.1;
+% w = 10;
+% f = {@(x,y) (y(2));
+%      @(x,y) -(2*e*w*y(2) + w^2*y(1))};
+% y(1,1) = 0.02;
+% y(1,2) = 0;
+% T = 4.0;
+% h = 1e-2;
+% x = linspace(0,T,N);
 
 
 % %Non-stiff Van-der-Pol Oscillator
@@ -162,5 +162,13 @@ while i < N && t < T
 end
 fprintf("Final time reached, end of integration!\n");
 
-
-plot(time,y(1:length(time),1),'-.');
+t = linspace(0,T,N);
+%exact = y(1,1)*exp(-t).*cos(9.95*t);
+plot(time,y(1:length(time),1))%,'-',t,exact);
+hold on;
+[t,y] = ode15s(@vdp1000,[0 T],[2; 0]);%Check for the value of mu inside @vdp
+plot(t,y(:,1),'-o');
+title('Solution of van der Pol Equation, \mu = 3');
+xlabel('Time t');
+ylabel('Solution y_1');
+legend('Numerical', 'Exact');

@@ -78,7 +78,7 @@ t = linspace(0,T,N);
 %exact = y(1,1)*exp(-t).*cos(9.95*t);
 plot(t,y(:,1))%,'-.',t,exact);
 hold on;
-[t,y] = ode15s(@vdp1000,[0 T],[2; 0]);
+[t,y] = ode15s(@vdp,[0 T],[2; 0]);%Check for the value of mu inside @vdp
 plot(t,y(:,1),'-o');
 title('Solution of van der Pol Equation, \mu = 1000');
 xlabel('Time t');
