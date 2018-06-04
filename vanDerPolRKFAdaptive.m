@@ -11,16 +11,16 @@ emax = 1e-7;
 emin = 1e-8;
 hmax = 1.0;
 hmin = 1e-5;
-% %Damped- unforced oscillator
-% e = 0.1;
-% w = 10;
-% f = {@(x,y) (y(2));
-%      @(x,y) -(2*e*w*y(2) + w^2*y(1))};
-% y(1,1) = 0.02;
-% y(1,2) = 0;
-% T = 4.0;
-% h = 1e-2;
-% x = linspace(0,T,N);
+%Damped- unforced oscillator
+e = 0.1;
+w = 10;
+f = {@(x,y) (y(2));
+     @(x,y) -(2*e*w*y(2) + w^2*y(1))};
+y(1,1) = 0.02;
+y(1,2) = 0;
+T = 4.0;
+h = 1e-2;
+x = linspace(0,T,N);
 
 
 % %Non-stiff Van-der-Pol Oscillator
@@ -34,17 +34,17 @@ hmin = 1e-5;
 % x = linspace(0,T,N);
 
 
-%Stiff Van-der-Pol Oscillator
-mu = 1000.0;
-f = {@(x,y) (y(2));
-     @(x,y) (mu*(1.0 - y(1)^2)*y(2) - y(1))};
-y(1,1) = 2.0;
-y(1,2) = 0.0;
-z(1,1) = 2.0;
-y(1,2) = 0.0;
-T = 3000;
-h = T/N;
-x = linspace(0,T,N);
+% %Stiff Van-der-Pol Oscillator
+% mu = 1000.0;
+% f = {@(x,y) (y(2));
+%      @(x,y) (mu*(1.0 - y(1)^2)*y(2) - y(1))};
+% y(1,1) = 2.0;
+% y(1,2) = 0.0;
+% z(1,1) = 2.0;
+% y(1,2) = 0.0;
+% T = 3000;
+% h = T/N;
+% x = linspace(0,T,N);
 
 % %Stiff Chemical Kinetics Reaction
 % f = {@(x,y) (-0.04*y(1) + 1e4*y(2)*(3));
