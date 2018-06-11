@@ -16,30 +16,30 @@ y = zeros(N,eqNo);
 facmax = 15;
 facmin = 0.5;
 safetyFactor = 0.9;
-Atol = 1e-6;
+Atol = 1e-8;
 Rtol = 1e-6;
+Dtol = 1e-4;
 
-%Damped- unforced oscillator
-e = 0.1;
-w = 10;
-%f = {@(x,y) (y(2));
-%     @(x,y) -(2*e*w*y(2) + w^2*y(1))};
-f = {@(x,y) (y(2));@(x,y) -(2*e*w*y(2) + w^2*y(1))};
-y(1,1) = 0.02;
-y(1,2) = 0;
-T = 4.0;
-h = 1e-4;
-x = linspace(0,T,N);
+% %Damped- unforced oscillator
+% e = 0.1;
+% w = 10;
+% f = {@(x,y) (y(2));
+%      @(x,y) -(2*e*w*y(2) + w^2*y(1))};
+% y(1,1) = 0.02;
+% y(1,2) = 0;
+% T = 4.0;
+% h = 1e-4;
+% x = linspace(0,T,N);
 
-%Non-stiff Van-der-Pol Oscillator
-mu = 2.0;
-f = {@(x,y) (y(2));
-     @(x,y) (mu*(1.0 - y(1)^2)*y(2) - y(1))};
-y(1,1) = 2.0;
-y(1,2) = 0;
-T = 20;
-h = 1e-5;
-x = linspace(0,T,N);
+% %Non-stiff Van-der-Pol Oscillator
+% mu = 2.0;
+% f = {@(x,y) (y(2));
+%      @(x,y) (mu*(1.0 - y(1)^2)*y(2) - y(1))};
+% y(1,1) = 2.0;
+% y(1,2) = 0;
+% T = 20;
+% h = 1e-5;
+% x = linspace(0,T,N);
 
 
 % Stiff Van-der-Pol Oscillator
@@ -48,7 +48,7 @@ f = {@(x,y) (y(2));
      @(x,y) mu*(1-y(1)^2)*y(2) - y(1)};
 y(1,1) = 2.0;
 y(1,2) = 0;
-T = 1000;
+T = 2000;
 h = 1e-3;
 x = linspace(0,T,N);
 
@@ -83,8 +83,8 @@ while i < N && t < T
 %     for ii = 1:eqNo
 %         J(ii,:) = jacobianest(f{ii},y(i-1,:),x(i-1));
 %     end
-%    J = [0, 1; -2*mu*y(i-1,2)*y(i-1,1), mu*(1 - y(i-1,1)^2)];
-    J = [0,1;-w^2, -2*e*w];
+    J = [0, 1; -2*mu*y(i-1,2)*y(i-1,1), mu*(1 - y(i-1,1)^2)];
+%    J = [0,1;-w^2, -2*e*w];
     k = zeros(order,eqNo);
     dx = 1e-5;
     b = zeros(eqNo,1);
@@ -119,8 +119,11 @@ while i < N && t < T
     end
     %-----Adaptive error analysis-------
     
-    sc = [Atol + max(abs(betterSol(1,1)),abs(y(i-1,1)))*Rtol, Atol + max(abs(betterSol(2,1)),abs(y(i-1,2)))*Rtol];
-    
+    sc = [Atol + max(abs(betterSol(1,1)),abs(y(i-1,1)))*Rtol+max(abs(f{1}(x(i),betterSol(:,1))),abs(f{1}(x(i-1),y(i-1,:))))*Dtol,...
+          Atol + max(abs(betterSol(2,1)),abs(y(i-1,2)))*Rtol+max(abs(f{2}(x(i),betterSol(:,1))),abs(f{2}(x(i-1),y(i-1,:))))*Dtol];
+
+%     sc = [Atol + max(abs(betterSol(1,1)),abs(y(i-1,1)))*Rtol,...
+%           Atol + max(abs(betterSol(2,1)),abs(y(i-1,2)))*Rtol];
     
     error = sqrt(sum(((betterSol - Sol)./sc').^2)/eqNo);
     
@@ -164,9 +167,9 @@ figure(2)
 subplot(2,1,1);
 plot(time,y(1:length(time),1));%,'-o',t,exact);
 hold on;
-[t,exact] = ode15s(@vdp1000,[0 T],[2; 0]);%Check for the value of mu inside @vdp
+[t,exact] = ode23s(@vdp1000,[0 T],[2; 0]);%Check for the value of mu inside @vdp
 plot(t,exact(:,1),'-o')%,t,exact(:,2),'^',t,exact(:,3),'*');
-title('Solution of van der Pol Equation, \mu = 2');
+title('Solution of van der Pol Equation, \mu = 1000');
  xlabel('Time t');
  ylabel('Solution y_1');
  legend('Numerical', 'Exact/MATLAB');
