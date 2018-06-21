@@ -20,16 +20,16 @@ Atol = 1e-8;
 Rtol = 1e-6;
 Dtol = 1e-4;
 
-%Damped- unforced oscillator
-e = 0.1;
-w = 10;
-f = {@(x,y) (y(2));
-     @(x,y) -(2*e*w*y(2) + w^2*y(1))};
-y(1,1) = 0.02;
-y(1,2) = 0;
-T = 4.0;
-h = 1e-4;
-x = linspace(0,T,N);
+% %Damped- unforced oscillator
+% e = 0.1;
+% w = 10;
+% f = {@(x,y) (y(2));
+%      @(x,y) -(2*e*w*y(2) + w^2*y(1))};
+% y(1,1) = 0.02;
+% y(1,2) = 0;
+% T = 4.0;
+% h = 1e-4;
+% x = linspace(0,T,N);
 
 % %Non-stiff Van-der-Pol Oscillator
 % mu = 2.0;
@@ -42,15 +42,15 @@ x = linspace(0,T,N);
 % x = linspace(0,T,N);
 
 
-% % Stiff Van-der-Pol Oscillator
-% mu = 1000;
-% f = {@(x,y) (y(2));
-%      @(x,y) mu*(1-y(1)^2)*y(2) - y(1)};
-% y(1,1) = 2.0;
-% y(1,2) = 0;
-% T = 2000;
-% h = 1e-3;
-% x = linspace(0,T,N);
+% Stiff Van-der-Pol Oscillator
+mu = 1000;
+f = {@(x,y) (y(2));
+     @(x,y) mu*(1-y(1)^2)*y(2) - y(1)};
+y(1,1) = 2.0;
+y(1,2) = 0;
+T = 1000;
+h = 1e-3;
+x = linspace(0,T,N);
 
 
 %Coefficients for 4th order Rosenbrock Integration(4stage with 3 stage embedded) - GRK4A
@@ -83,8 +83,8 @@ while i < N && t < T
 %     for ii = 1:eqNo
 %         J(ii,:) = jacobianest(f{ii},y(i-1,:),x(i-1));
 %     end
-%    J = [0, 1; -2*mu*y(i-1,2)*y(i-1,1), mu*(1 - y(i-1,1)^2)];
-    J = [0,1;-w^2, -2*e*w];
+    J = [0, 1; -2*mu*y(i-1,2)*y(i-1,1), mu*(1 - y(i-1,1)^2)];
+    %J = [0,1;-w^2, -2*e*w];
     k = zeros(order,eqNo);
     dx = 1e-5;
     b = zeros(eqNo,1);
