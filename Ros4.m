@@ -23,8 +23,6 @@ Dtol = 1e-4;
 % %Damped- unforced oscillator
 % e = 0.1;
 % w = 10;
-% f = {@(x,y) (y(2));
-%      @(x,y) -(2*e*w*y(2) + w^2*y(1))};
 % y(1,1) = 0.02;
 % y(1,2) = 0;
 % T = 4.0;
@@ -33,8 +31,6 @@ Dtol = 1e-4;
 
 % %Non-stiff Van-der-Pol Oscillator
 % mu = 2.0;
-% f = {@(x,y) (y(2));
-%      @(x,y) (mu*(1.0 - y(1)^2)*y(2) - y(1))};
 % y(1,1) = 2.0;
 % y(1,2) = 0;
 % T = 20;
@@ -48,7 +44,7 @@ f = {@(x,y) (y(2));
      @(x,y) mu*(1-y(1)^2)*y(2) - y(1)};
 y(1,1) = 2.0;
 y(1,2) = 0;
-T = 1000;
+T = 3000;
 h = 1e-3;
 x = linspace(0,T,N);
 
@@ -70,6 +66,11 @@ alpha = [0, 0, 0, 0;
 c = [0.199293, 0.482645, 0.68061488e-1, 0.25];
 chat = [0.3463258, 0.2856931, 0.36798, 0];
 order = 4;
+%---------------Starting step size prediction-------------%
+do = norm(y(1,:));
+d1 = 0;
+
+
 
 %---Start Integration------%
 i = 2;
@@ -79,10 +80,7 @@ while i < N && t < T
     Sol = zeros(eqNo,1);
     betterSol = zeros(eqNo,1);
     %Computing the solutions for the new step
-%     J = zeros(eqNo,eqNo);
-%     for ii = 1:eqNo
-%         J(ii,:) = jacobianest(f{ii},y(i-1,:),x(i-1));
-%     end
+
     J = [0, 1; -2*mu*y(i-1,2)*y(i-1,1), mu*(1 - y(i-1,1)^2)];
     %J = [0,1;-w^2, -2*e*w];
     k = zeros(order,eqNo);
@@ -91,26 +89,20 @@ while i < N && t < T
     dfdt = zeros(eqNo,1);
     A = eye(length(J)) - h*J*gamma;
     %First Slope computation
-    for ii=1:eqNo
-        dfdt(ii,1) = (f{ii}(x(i-1)+dx,y(i-1,:)) - f{ii}(x(i-1),y(i-1,:)))/dx;%Maybe replace this by the derivative function in DERIVSUITE 
-        b(ii,1) = h*f{ii}(x(i-1),y(i-1,:));
-    end
-    %c1 = [c1, cond(A)];
+    %b(:,1) = h*fDO(x(i-1),y(i-1,:),e,w);
+    b(:,1) = h*fVDP(x(i-1),y(i-1,:),mu);
     k(1,:) = A\b;
     %Second Slope computation
-    for ii=1:eqNo
-        b(ii,1) = h*f{ii}(x(i-1),y(i-1,:)+alpha(2,1)*k(1,ii)) + gammaTilde(2,1)*k(1,ii);
-    end
+    %b(:,1) = h*fDO(x(i-1),y(i-1,:)+alpha(2,1)*k(1,:),e,w) + gammaTilde(2,1)*k(1,:);
+    b(:,1) = h*fVDP(x(i-1),y(i-1,:)+alpha(2,1)*k(1,:),mu) + gammaTilde(2,1)*k(1,:);
     k(2,:) = A\b - gammaTilde(2,1)*k(1,:)';
     %Third Slope computation
-    for ii=1:eqNo
-        b(ii,1) = h*f{ii}(x(i-1),y(i-1,:) + alpha(3,1)*k(1,ii) +alpha(3,2)*k(2,ii))+gammaTilde(3,1)*k(1,ii)+gammaTilde(3,2)*k(2,ii);
-    end
+    %b(:,1) = h*fDO(x(i-1),y(i-1,:)+ alpha(3,1)*k(1,:) +alpha(3,2)*k(2,:),e,w)+gammaTilde(3,1)*k(1,:)+gammaTilde(3,2)*k(2,:);
+    b(:,1) = h*fVDP(x(i-1),y(i-1,:)+ alpha(3,1)*k(1,:) +alpha(3,2)*k(2,:),mu)+gammaTilde(3,1)*k(1,:)+gammaTilde(3,2)*k(2,:);
     k(3,:) = A\b - gammaTilde(3,1)*k(1,:)'- gammaTilde(3,2)*k(2,:)';
     %Fourth Slope computation
-    for ii=1:eqNo
-        b(ii,1) = h*f{ii}(x(i-1),y(i-1,:) + alpha(3,1)*k(1,ii) +alpha(3,2)*k(2,ii))+gammaTilde(4,1)*k(1,ii)+gammaTilde(4,2)*k(2,ii)+gammaTilde(4,3)*k(3,ii);
-    end
+    %b(:,1) = h*fDO(x(i-1),y(i-1,:) + alpha(3,1)*k(1,:) +alpha(3,2)*k(2,:),e,w)+gammaTilde(4,1)*k(1,:)+gammaTilde(4,2)*k(2,:)+gammaTilde(4,3)*k(3,:);
+    b(:,1) = h*fVDP(x(i-1),y(i-1,:) + alpha(3,1)*k(1,:) +alpha(3,2)*k(2,:),mu)+gammaTilde(4,1)*k(1,:)+gammaTilde(4,2)*k(2,:)+gammaTilde(4,3)*k(3,:);
     k(4,:) = A\b - gammaTilde(4,1)*k(1,:)'- gammaTilde(4,2)*k(2,:)' - gammaTilde(4,3)*k(3,:)';
     %---Actual Integration----
     for ii=1:eqNo
@@ -119,11 +111,11 @@ while i < N && t < T
     end
     %-----Adaptive error analysis-------
     
-    sc = [Atol + max(abs(betterSol(1,1)),abs(y(i-1,1)))*Rtol+max(abs(f{1}(x(i),betterSol(:,1))),abs(f{1}(x(i-1),y(i-1,:))))*Dtol,...
-          Atol + max(abs(betterSol(2,1)),abs(y(i-1,2)))*Rtol+max(abs(f{2}(x(i),betterSol(:,1))),abs(f{2}(x(i-1),y(i-1,:))))*Dtol];
+%     sc = [Atol + max(abs(betterSol(1,1)),abs(y(i-1,1)))*Rtol+max(abs(f{1}(x(i),betterSol(:,1))),abs(f{1}(x(i-1),y(i-1,:))))*Dtol,...
+%           Atol + max(abs(betterSol(2,1)),abs(y(i-1,2)))*Rtol+max(abs(f{2}(x(i),betterSol(:,1))),abs(f{2}(x(i-1),y(i-1,:))))*Dtol];
 
-%     sc = [Atol + max(abs(betterSol(1,1)),abs(y(i-1,1)))*Rtol,...
-%           Atol + max(abs(betterSol(2,1)),abs(y(i-1,2)))*Rtol];
+    sc = [Atol + max(abs(betterSol(1,1)),abs(y(i-1,1)))*Rtol,...
+          Atol + max(abs(betterSol(2,1)),abs(y(i-1,2)))*Rtol];
     
     error = sqrt(sum(((betterSol - Sol)./sc').^2)/eqNo);
     
@@ -140,7 +132,7 @@ while i < N && t < T
         facmax = 1;
         h = hnew;
     else
-        fprintf("Iteration %d, updating solution! \n",i);
+        %fprintf("Iteration %d, updating solution! \n",i);
         time = [time, t];
         y(i,:) = betterSol;
         t = t + h;
@@ -161,15 +153,15 @@ end
 fprintf("Final time reached, end of integration!\n");
 
 %Exact solution
-t = linspace(0,T,N);
+t = linspace(0,T,1000);
 exact = y(1,1)*exp(-t).*cos(9.95*t);
 figure(2)
 subplot(2,1,1);
-plot(time,y(1:length(time),1));%,'-o',t,exact);
+plot(time,y(1:length(time),1));%,'.-',t,exact,'o');
 hold on;
 [t,exact] = ode23s(@vdp1000,[0 T],[2; 0]);%Check for the value of mu inside @vdp
 plot(t,exact(:,1),'-o')%,t,exact(:,2),'^',t,exact(:,3),'*');
-title('Solution of van der Pol Equation, \mu = 1000');
+title('Solution of van der Pol Equation, \mu = 2');
  xlabel('Time t');
  ylabel('Solution y_1');
  legend('Numerical', 'Exact/MATLAB');
@@ -198,20 +190,14 @@ subplot(2,1,2);
 % ylabel('2-norm condition number');
 % legend('Condition number','scaled Stepsize');
 
+function yDO = fDO(x,y,e,w)
 
+yDO = [y(2), -(2*e*w*y(2) + w^2*y(1))];
 
-% %Writing condition numbers to files
-% fileID = fopen('C1_DO_1e6.txt','w');
-% fprintf(fileID,'%6s %12s\n','iteration','condNo_k1');
-% fprintf(fileID,'%6.2f %12.8f\n',[linspace(0,length(c1),length(c1));vpa(c1)]);
-% fclose(fileID);
-% 
-% fileID = fopen('C2_DO_1e6.txt','w');
-% fprintf(fileID,'%6s %12s\n','iteration','condNo_k2');
-% fprintf(fileID,'%6.2f %12.8f\n',[linspace(0,length(c2),length(c2));vpa(c2)]);
-% fclose(fileID);
-% 
-% fileID = fopen('C3_DO_1e6.txt','w');
-% fprintf(fileID,'%6s %12s\n','iteration','condNo_k3');
-% fprintf(fileID,'%6.2f %12.8f\n',[linspace(0,length(c3),length(c3));vpa(c3)]);
-% fclose(fileID);
+end
+
+function yVDP = fVDP(x,y,mu)
+
+yVDP = [y(2), (mu*(1.0 - y(1)^2)*y(2) - y(1))];
+
+end
