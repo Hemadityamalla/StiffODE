@@ -1,7 +1,7 @@
 clear;
 clc;
 
-N = 40000;%int64(4e4);
+N = int64(3000);
 time = [];
 %ODE System Init
 eqNo = 2;
@@ -9,12 +9,10 @@ y = zeros(N,eqNo);
 %Damped- unforced oscillator
 e = 0.1;
 w = 10;
-f = {@(x,y) (y(2));
-     @(x,y) -(2*e*w*y(2) + w^2*y(1))};
 y(1,1) = 0.02;
 y(1,2) = 0;
 T = 4.0;
-h = 1e-7;
+h = 1e-4;
 x = linspace(0,T,N);
 
 % %Stiff Van-der-Pol Oscillator
@@ -31,6 +29,7 @@ x = linspace(0,T,N);
 
 gamma = 1 + sqrt(0.5);
 a21 = 1.0;
+gammaTilde21 = -2.0;
 
 %Start integration
 t = 0;
@@ -43,9 +42,9 @@ for i = 2:N
     %J = [0, 1; -2*mu*y(i-1,2)*y(i-1,1), mu*(1 - y(i-1,1)^2)];
     J = [0,1;-w^2, -2*e*w];
         %Computing the slopes ki
-    k1 = (eye(length(J)) - gamma*h*J)\[f{1}(x(i-1),y(i-1,:)), f{2}(x(i-1), y(i-1,:))]';
+    k1 = (eye(length(J)) - gamma*h*J)\f(x,y(i-1,:));
     
-    k2 = (eye(length(J)) - gamma*h*J)\[f{1}(x(i-1)+a21*h,y(i-1,:)+a21*k1(1))-2*k1(1), f{2}(x(i-1)+a21*h, y(i-1,:)+a21*k1(2))-2*k1(2)]';
+    k2 = (eye(length(J)) - gamma*h*J)\(f(x,y(i-1,:))+ gammaTilde21*k1) - gammaTilde21*k1;
     
     %---Actual Integration----
     for ii=1:eqNo
@@ -62,13 +61,15 @@ for i = 2:N
     end
     fprintf("Iteration %d. \n",i);
     t = t + h;
+    time = [t time];
+    
 end
 fprintf("Final time reached, end of integration!\n");
 
 %Exact solution
-t = linspace(0,T,N);
-exact = y(1,1)*exp(-t).*cos(9.95*t);
-plot(t,y(:,1),'-.',t,exact);
+tym = linspace(0,T,N);
+exact = y(1,1)*exp(-tym).*cos(9.95*tym);
+plot(time,y(1:length(time),1),'-.',tym,exact);
 hold on;
 % [t,y] = ode15s(@vdp,[0 T],[2; 0]);%Check for the value of mu inside @vdp
 % plot(t,y(:,1),'-o');
@@ -76,3 +77,12 @@ hold on;
 xlabel('Time t');
 ylabel('Solution y_1');
 legend('Numerical', 'Exact');
+
+function dydt = f(x,y)
+
+    e = 0.1;
+    w = 10.0;
+    dydt = [y(2); -(2*e*w*y(2) + w^2*y(1))];
+ 
+ 
+ end

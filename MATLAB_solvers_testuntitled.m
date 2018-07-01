@@ -3,7 +3,7 @@ clc;
 
 T = 3000;
 
-opts = odeset('RelTol',1e-8,'Abstol',1e-8,'Stats','on');
+opts = odeset('RelTol',1e-12,'Abstol',1e-14,'Stats','on');
 fprintf("Stats for ode23s.............\n");
 [t,exact] = ode23s(@vdp1000,[0 T],[2; 0],opts);%Check for the value of mu inside @vdp
 plot(t,exact(:,1),'-');
@@ -17,5 +17,5 @@ hold on;
 % ylabel('Solution y_1');
 % legend('ode23s', 'ode15s');
 
-csvwrite('VDP_1em8.dat',[t,exact]);
+csvwrite('VDP_Exact.dat',[t,exact]);
 

@@ -14,11 +14,11 @@ tRejected = [];
 %ODE System Init
 eqNo = 2;
 y = zeros(N,eqNo);
-facmax = 50;
+facmax = 15;
 facmin = 0.5;
 safetyFactor = 0.8;
 Atol = 1e-6;
-Rtol = 1e-4;
+Rtol = 1e-3;
 
 % %Damped- unforced oscillator
 % e = 0.1;
@@ -47,7 +47,7 @@ f = {@(x,y) (y(2));
      @(x,y) mu*(1-y(1)^2)*y(2) - y(1)};
 y(1,1) = 2.0;
 y(1,2) = 0;
-T = 1000;
+T = 3000;
 h = 1e-3;
 x = linspace(0,T,N);
 
@@ -82,7 +82,7 @@ while i < N && t < T
     k(1,:) = W\F(1,:)';
     %Second Slope computation
     for ii=1:eqNo
-        F(2,ii) = f{ii}(x(i-1),y(i-1,:)+0.5*h*k(1,ii));
+        F(2,ii) = f{ii}(x(i-1),y(i-1,:)+0.5*h*k(1,:));
     end
     k(2,:) = W\(F(2,:)' - k(1,:)') + k(1,:)';
     %---Actual Integration----
@@ -137,12 +137,13 @@ fprintf("Final time reached, end of integration!\n");
 % exact = y(1,1)*exp(-t).*cos(9.95*t);
 figure(2)
 subplot(2,1,1);
-plot(time,y(1:length(time),1),'-o');%,'-o',t,exact);
+plot(time,y(1:length(time),1),'b^-','LineWidth',1,'MarkerSize',3);
 hold on;
-opts = odeset('RelTol',1e-20,'Abstol',1e-20);
-[tym,exact] = ode23s(@vdpstiff,[0 T],[2; 0],opts);%Check for the value of mu inside @vdp
-plot(tym,exact(:,1),'-')%,t,exact(:,2),'^',t,exact(:,3),'*');
-title('Solution of van der Pol Equation, \mu = 1000');
+opts = odeset('RelTol',1e-12,'Abstol',1e-14);
+%[tym,exact] = ode23s(@vdpstiff,[0 T],[2; 0],opts);%Check for the value of mu inside @vdp
+A = csvread("VDP_Exact.dat");
+plot(A(:,1),A(:,2),'r-')%,t,exact(:,2),'^',t,exact(:,3),'*');
+title('Solution of Stiff Equation, \mu = 1000');
  xlabel('Time t');
  ylabel('Solution y_1');
  legend('Numerical', 'Exact/MATLAB');

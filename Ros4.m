@@ -11,14 +11,13 @@ hRejected = [];
 timeStep = [];
 tRejected = [];
 %ODE System Init
-eqNo = 8;
+eqNo = 2;
 y = zeros(N,eqNo);
 facmax = 15;
 facmin = 0.5;
 safetyFactor = 0.9;
 Atol = 1e-6;
-Rtol = 1e-4;
-Dtol = 1e-4;
+Rtol = 1e-3;
 
 % %Damped- unforced oscillator
 % e = 0.1;
@@ -38,19 +37,18 @@ Dtol = 1e-4;
 % x = linspace(0,T,N);
 
 % 
-% % Stiff Van-der-Pol Oscillator
-% mu = 1000;
-% y(1,1) = 2.0;
-% y(1,2) = 0;
-% T = 3000;
-% h = 1e-3;
-% x = linspace(0,T,N);
-
-%Stiff HIRES
-y(1,:) = [1,0,0,0,0,0,0,0.0057];
-T = 321.8122;
+% Stiff Van-der-Pol Oscillator
+mu = 1000;
+y(1,:) = [2.0,0.0];
+T = 3000;
 h = 1e-3;
 x = linspace(0,T,N);
+
+% %Stiff HIRES
+% y(1,:) = [1,0,0,0,0,0,0,0.0057];
+% T = 321.8122;
+% h = 1e-3;
+% x = linspace(0,T,N);
 
 
 %Coefficients for 4th order Rosenbrock Integration(4stage with 3 stage embedded) - GRK4A
@@ -71,26 +69,26 @@ c = [0.199293, 0.482645, 0.68061488e-1, 0.25];
 chat = [0.3463258, 0.2856931, 0.36798, 0];
 order = 4;
 %---------------Starting step size prediction-------------%
-do = norm(y(1,:));
-d1 = 0;
-if do < 1e-5 || d1 < 1e-5
-    h0 = 1e-6;
-else
-    h0 = 0.01*(do/d1);
-end
-ytemp = y(1,:) + h0*fHIRES(x(1),y(1,:));
-d2 = norm(fHIRES(x(1)+h0,ytemp) - fHIRES(x(1),y(1,:)))/h0;
-if max(d1,d2) <= 1e-5
-    h1 = max(1e-6,h0*1e-3);
-else
-    p = 4; %Order of the integration scheme being used
-    h1 = (0.01/max(d1,d2))^(1/(1+p));
-end
-
-h = min(100*h0,h1);
-
-
-fprintf('Predicted starting step size= %ld \n', h);
+% do = norm(y(1,:));
+% d1 = 0;
+% if do < 1e-5 || d1 < 1e-5
+%     h0 = 1e-6;
+% else
+%     h0 = 0.01*(do/d1);
+% end
+% ytemp = y(1,:) + h0*fHIRES(x(1),y(1,:));
+% d2 = norm(fHIRES(x(1)+h0,ytemp) - fHIRES(x(1),y(1,:)))/h0;
+% if max(d1,d2) <= 1e-5
+%     h1 = max(1e-6,h0*1e-3);
+% else
+%     p = 4; %Order of the integration scheme being used
+%     h1 = (0.01/max(d1,d2))^(1/(1+p));
+% end
+% 
+% h = min(100*h0,h1);
+% 
+% 
+% fprintf('Predicted starting step size= %ld \n', h);
 
 
 %---Start Integration------%
@@ -102,16 +100,16 @@ while i < N && t < T
     betterSol = zeros(eqNo,1);
     %Computing the solutions for the new step
 
-    %J = [0, 1; -2*mu*y(i-1,2)*y(i-1,1), mu*(1 - y(i-1,1)^2)];
+    J = [0, 1; -2*mu*y(i-1,2)*y(i-1,1), mu*(1 - y(i-1,1)^2)];
     %J = [0,1;-w^2, -2*e*w];
-    J = [-1.71,  0.43, 8.32, 0, 0, 0, 0, 0;...
-          1.71, -8.75,    0, 0, 0, 0, 0, 0;...
-             0,     0,-10.03, 0.43,0.035,0,0,0;...
-             0,8.32,1.71,-1.12,0,0,0,0;...
-             0,0,0,0,-1.745,0.43,0.43,0;...
-             0,0,0,0.69,1.71,-0.43-280*y(i-1,8),0.69,-280*y(i-1,6);...
-             0,0,0,0,0,280*y(i-1,8),-1.81,280*y(i-1,6);...
-             0,0,0,0,0,-280*y(i-1,8),1.81,-280*y(i-1,6)];
+%     J = [-1.71,  0.43, 8.32, 0, 0, 0, 0, 0;...
+%           1.71, -8.75,    0, 0, 0, 0, 0, 0;...
+%              0,     0,-10.03, 0.43,0.035,0,0,0;...
+%              0,8.32,1.71,-1.12,0,0,0,0;...
+%              0,0,0,0,-1.745,0.43,0.43,0;...
+%              0,0,0,0.69,1.71,-0.43-280*y(i-1,8),0.69,-280*y(i-1,6);...
+%              0,0,0,0,0,280*y(i-1,8),-1.81,280*y(i-1,6);...
+%              0,0,0,0,0,-280*y(i-1,8),1.81,-280*y(i-1,6)];
     k = zeros(order,eqNo);
     dx = 1e-5;
     b = zeros(eqNo,1);
@@ -119,29 +117,29 @@ while i < N && t < T
     A = eye(length(J)) - h*J*gamma;
     %First Slope computation
     %b(:,1) = h*fDO(x(i-1),y(i-1,:),e,w);
-    %b(:,1) = h*fVDP(x(i-1),y(i-1,:),mu);
-    b(:,1) = h*fHIRES(x(i-1),y(i-1,:));
+    b(:,1) = h*fVDP(x(i-1),y(i-1,:),mu);
+    %b(:,1) = h*fHIRES(x(i-1),y(i-1,:));
     k(1,:) = A\b;
     
     
     %Second Slope computation
     %b(:,1) = h*fDO(x(i-1),y(i-1,:)+alpha(2,1)*k(1,:),e,w) + gammaTilde(2,1)*k(1,:);
-    %b(:,1) = h*fVDP(x(i-1),y(i-1,:)+alpha(2,1)*k(1,:),mu) + gammaTilde(2,1)*k(1,:);
-    b(:,1) = h*fHIRES(x(i-1),y(i-1,:)+alpha(2,1)*k(1,:)) + gammaTilde(2,1)*k(1,:);
+    b(:,1) = h*fVDP(x(i-1),y(i-1,:)+alpha(2,1)*k(1,:),mu) + gammaTilde(2,1)*k(1,:);
+    %b(:,1) = h*fHIRES(x(i-1),y(i-1,:)+alpha(2,1)*k(1,:)) + gammaTilde(2,1)*k(1,:);
     k(2,:) = A\b - gammaTilde(2,1)*k(1,:)';
     
     
     %Third Slope computation
     %b(:,1) = h*fDO(x(i-1),y(i-1,:)+ alpha(3,1)*k(1,:) +alpha(3,2)*k(2,:),e,w)+gammaTilde(3,1)*k(1,:)+gammaTilde(3,2)*k(2,:);
-    %b(:,1) = h*fVDP(x(i-1),y(i-1,:)+ alpha(3,1)*k(1,:) +alpha(3,2)*k(2,:),mu)+gammaTilde(3,1)*k(1,:)+gammaTilde(3,2)*k(2,:);
-    b(:,1) = h*fHIRES(x(i-1),y(i-1,:)+ alpha(3,1)*k(1,:) +alpha(3,2)*k(2,:))+gammaTilde(3,1)*k(1,:)+gammaTilde(3,2)*k(2,:);
+    b(:,1) = h*fVDP(x(i-1),y(i-1,:)+ alpha(3,1)*k(1,:) +alpha(3,2)*k(2,:),mu)+gammaTilde(3,1)*k(1,:)+gammaTilde(3,2)*k(2,:);
+    %b(:,1) = h*fHIRES(x(i-1),y(i-1,:)+ alpha(3,1)*k(1,:) +alpha(3,2)*k(2,:))+gammaTilde(3,1)*k(1,:)+gammaTilde(3,2)*k(2,:);
     k(3,:) = A\b - gammaTilde(3,1)*k(1,:)'- gammaTilde(3,2)*k(2,:)';
     
     
     %Fourth Slope computation
     %b(:,1) = h*fDO(x(i-1),y(i-1,:) + alpha(3,1)*k(1,:) +alpha(3,2)*k(2,:),e,w)+gammaTilde(4,1)*k(1,:)+gammaTilde(4,2)*k(2,:)+gammaTilde(4,3)*k(3,:);
-    %b(:,1) = h*fVDP(x(i-1),y(i-1,:) + alpha(3,1)*k(1,:) +alpha(3,2)*k(2,:),mu)+gammaTilde(4,1)*k(1,:)+gammaTilde(4,2)*k(2,:)+gammaTilde(4,3)*k(3,:);
-    b(:,1) = h*fHIRES(x(i-1),y(i-1,:) + alpha(3,1)*k(1,:) +alpha(3,2)*k(2,:))+gammaTilde(4,1)*k(1,:)+gammaTilde(4,2)*k(2,:)+gammaTilde(4,3)*k(3,:);
+    b(:,1) = h*fVDP(x(i-1),y(i-1,:) + alpha(3,1)*k(1,:) +alpha(3,2)*k(2,:),mu)+gammaTilde(4,1)*k(1,:)+gammaTilde(4,2)*k(2,:)+gammaTilde(4,3)*k(3,:);
+    %b(:,1) = h*fHIRES(x(i-1),y(i-1,:) + alpha(3,1)*k(1,:) +alpha(3,2)*k(2,:))+gammaTilde(4,1)*k(1,:)+gammaTilde(4,2)*k(2,:)+gammaTilde(4,3)*k(3,:);
     k(4,:) = A\b - gammaTilde(4,1)*k(1,:)'- gammaTilde(4,2)*k(2,:)' - gammaTilde(4,3)*k(3,:)';
     
     
@@ -173,7 +171,7 @@ while i < N && t < T
         facmax = 1;
         h = hnew;
     else
-        %fprintf("Iteration %d, updating solution! \n",i);
+        fprintf("Iteration %d, updating solution! \n",i);
         time = [time, t];
         y(i,:) = betterSol;
         t = t + h;
@@ -203,9 +201,10 @@ hold on;
 % plot(t,exact,'r.');
 % hold on;
 opts = odeset('RelTol',1e-10,'Abstol',1e-10);
-[t,exact] = ode23s(@fHIRESMATLAB,[0 T],y(1,:),opts);
-plot(t,exact(:,1),'ro','LineWidth',1,'MarkerSize',2);
-title('Solution of the HIRES system');
+%[t,exact] = ode23s(@fHIRESMATLAB,[0 T],y(1,:),opts);
+A = csvread('VDP_Exact.dat');
+plot(A(:,1),A(:,2),'ro','LineWidth',1,'MarkerSize',2);
+title('Solution of the Stiff system');
  xlabel('Time t');
  ylabel('Solution y_1');
  legend('Numerical', 'Exact/MATLAB');
