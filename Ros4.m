@@ -262,24 +262,6 @@ subplot(2,1,2);
 %  legend('Numerical', 'Exact/MATLAB');
 
 
-
- 
- 
- 
-% %Plotting the condition numbers
-% figure(3)
-% grid on;
-% plot(c1,'ro-');
-% hold on;
-% plot(timeStep*1e2,'b*-')
-% % hold on;
-% % loglog(vpa(c2),'b*');
-% % hold on;
-% % loglog(vpa(c3),'g^');
-% xlabel('Iteration');
-% ylabel('2-norm condition number');
-% legend('Condition number','scaled Stepsize');
-
 function yDO = fDO(x,y,e,w)
 
 yDO = [y(2), -(2*e*w*y(2) + w^2*y(1))];
