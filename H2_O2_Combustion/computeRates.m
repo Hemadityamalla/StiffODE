@@ -41,6 +41,6 @@ function k = computeRates(T)
          8.15e23,  2.62e19];
 
 R = 8.314;
-k = A.*(T.^n).*exp(Ea/(R*T));
+k = A.*(T.^n).*exp(-Ea/(R*T));
 
 end

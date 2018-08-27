@@ -21,20 +21,20 @@ Rtol = 1e-3;
 
 
 %H2-O2 combustion
-y(1,:) = [2,1,0,0,0,0,0,0]; %phi=1 stoichiometric ratio
-T = 1e-4;
-h = 1e-3;
+y(1,:) = [0.3,0.15,0,0,0,0,0,0]; %phi=1 stoichiometric ratio
+T = 1e-5;
+h = 1e-10;
 x = linspace(0,T,N);
 
 
 %Coefficients for 4th order Rosenbrock Integration(4stage with 3 stage embedded) - GRK4A
 %Only for the case of autonomous ODE
 gamma = 0.395;
-gammaCoeff = [0, 0, 0, 0;
+gammaCoeffs = [0, 0, 0, 0;
               -0.7676724, 0, 0, 0;
               -0.8516753, 0.5229673, 0, 0;
               0.28846311, 0.880214e-1, -0.33739, 0];
-gammaTilde = gammaCoeff/gamma;
+gammaTilde = gammaCoeffs/gamma;
 
 alpha = [0, 0, 0, 0;
         0.438, 0, 0, 0;
@@ -77,40 +77,32 @@ while i < N && t < T
     Sol = zeros(eqNo,1);
     betterSol = zeros(eqNo,1);
     %Computing the solutions for the new step
-
-%     J = [-1.71,  0.43, 8.32, 0, 0, 0, 0, 0;...
-%           1.71, -8.75,    0, 0, 0, 0, 0, 0;...
-%              0,     0,-10.03, 0.43,0.035,0,0,0;...
-%              0,8.32,1.71,-1.12,0,0,0,0;...
-%              0,0,0,0,-1.745,0.43,0.43,0;...
-%              0,0,0,0.69,1.71,-0.43-280*y(i-1,8),0.69,-280*y(i-1,6);...
-%              0,0,0,0,0,280*y(i-1,8),-1.81,280*y(i-1,6);...
-%              0,0,0,0,0,-280*y(i-1,8),1.81,-280*y(i-1,6)];
     Temp = temperature(t); 
     rateConsts = computeRates(Temp);
-    J = dfdy(y,rateConsts);
+    J = dfdy(y(i-1,:),rateConsts);
     k = zeros(order,eqNo);
     dx = 1e-5;
     b = zeros(eqNo,1);
-    Jt = dfdt(t,y(i-1,:),rateConsts);
+    Jt = (f(computeRates(temperature(t+h)),y(i-1,:)) - f(rateConsts,y(i-1,:)))/h;%dfdt(t,y(i-1,:),rateConsts);
     A = eye(length(J)) - h*J*gamma;
     %First Slope computation
-    b(:,1) = h*f(rateConsts,y(i-1,:));
+    b(:,1) = h*f(rateConsts,y(i-1,:)) + h^2*sum(gammaCoeffs(1,:))*Jt;
     k(1,:) = A\b;
     
     
     %Second Slope computation
-    b(:,1) = h*f(rateConsts,y(i-1,:)+alpha(2,1)*k(1,:)) + gammaTilde(2,1)*k(1,:);
+    
+    b(:,1) = h*f(computeRates(temperature(t+h*alpha(2,1))),y(i-1,:)+alpha(2,1)*k(1,:)) +h^2*sum(gammaCoeffs(2,:))*Jt + gammaTilde(2,1)*k(1,:);
     k(2,:) = A\b - gammaTilde(2,1)*k(1,:)';
     
     
     %Third Slope computation
-    b(:,1) = h*f(rateConsts,y(i-1,:)+ alpha(3,1)*k(1,:) +alpha(3,2)*k(2,:))+gammaTilde(3,1)*k(1,:)+gammaTilde(3,2)*k(2,:);
+    b(:,1) = h*f(computeRates(temperature(t + h*(alpha(3,1) + alpha(3,2)))),y(i-1,:)+ alpha(3,1)*k(1,:) +alpha(3,2)*k(2,:)) + h^2*sum(gammaCoeffs(3,:))*Jt + gammaTilde(3,1)*k(1,:)+gammaTilde(3,2)*k(2,:);
     k(3,:) = A\b - gammaTilde(3,1)*k(1,:)'- gammaTilde(3,2)*k(2,:)';
     
     
     %Fourth Slope computation
-    b(:,1) = h*f(rateConsts,y(i-1,:) + alpha(3,1)*k(1,:) +alpha(3,2)*k(2,:))+gammaTilde(4,1)*k(1,:)+gammaTilde(4,2)*k(2,:)+gammaTilde(4,3)*k(3,:);
+    b(:,1) = h*f(computeRates(temperature(t + h*(alpha(3,1) + alpha(3,2) + alpha(3,3)))),y(i-1,:) + alpha(3,1)*k(1,:) +alpha(3,2)*k(2,:)) +h^2*sum(gammaCoeffs(4,:))*Jt +  gammaTilde(4,1)*k(1,:)+gammaTilde(4,2)*k(2,:)+gammaTilde(4,3)*k(3,:);
     k(4,:) = A\b - gammaTilde(4,1)*k(1,:)'- gammaTilde(4,2)*k(2,:)' - gammaTilde(4,3)*k(3,:)';
     
     
@@ -160,14 +152,29 @@ fprintf("Final time reached, end of integration!\n");
 
 
 figure(1)
-subplot(2,1,1);
-plot(time,y(1:length(time),1),'b^-','LineWidth',1,'MarkerSize',3);
+% plot(time,y(1:length(time),1),'b^-','LineWidth',1,'MarkerSize',3);
+% hold on;
+% plot(time,y(1:length(time),2),'g^-','LineWidth',1,'MarkerSize',3);
+% hold on;
+% plot(time,y(1:length(time),3),'r^-','LineWidth',1,'MarkerSize',3);
+% hold on;
+% plot(time,y(1:length(time),6),'c^-','LineWidth',1,'MarkerSize',3);
+% hold on;
+plot(time,y(1:length(time),1),'r','LineWidth',2);
 hold on;
-plot(time,y(1:length(time),2),'g^-','LineWidth',1,'MarkerSize',3);
+plot(time,y(1:length(time),2),'g','LineWidth',2);
 hold on;
-plot(time,y(1:length(time),3),'r^-','LineWidth',1,'MarkerSize',3);
+plot(time,y(1:length(time),3),'o','LineWidth',2);
 hold on;
-plot(time,y(1:length(time),6),'c^-','LineWidth',1,'MarkerSize',3);
+plot(time,y(1:length(time),4),'y','LineWidth',2);
+hold on;
+plot(time,y(1:length(time),5),'c','LineWidth',2);
+hold on;
+plot(time,y(1:length(time),6),'m','LineWidth',2);
+hold on;
+plot(time,y(1:length(time),7),'k','LineWidth',2);
+hold on;
+plot(time,y(1:length(time),8),'b','LineWidth',2);
 hold on;
 %Solving it with MATLAB solvers
 %opts = odeset('RelTol',1e-10,'Abstol',1e-10);
@@ -175,8 +182,8 @@ hold on;
 title('Solution of the Stiff system');
  xlabel('Time t');
  ylabel('Solution y_1');
- legend('Numerical', 'Exact/MATLAB');
-subplot(2,1,2);
+ %legend('Numerical', 'Exact/MATLAB');
+figure(2);
  semilogy(time,hAccepted,'o','MarkerSize',2);
  legend('Accepted');
  hold on;
@@ -186,44 +193,44 @@ subplot(2,1,2);
  ylabel('log(h)');
  legend('Accepted','Rejected');
  
- figure(3)
- subplot(4,2,1);
- loglog(time,y(1:length(time),1),'b^-','LineWidth',1,'MarkerSize',3);
- hold on;
- loglog(t,exact(:,1),'ro','LineWidth',1,'MarkerSize',2);
- legend('Numerical', 'Exact/MATLAB');
- subplot(4,2,2);
-loglog(time,y(1:length(time),2),'b^-','LineWidth',1,'MarkerSize',3);
- hold on;
-loglog(t,exact(:,2),'ro','LineWidth',1,'MarkerSize',2);
- legend('Numerical', 'Exact/MATLAB');
- subplot(4,2,3);
-loglog(time,y(1:length(time),3),'b^-','LineWidth',1,'MarkerSize',3);
- hold on;
-loglog(t,exact(:,3),'ro','LineWidth',1,'MarkerSize',2);
- legend('Numerical', 'Exact/MATLAB');
- subplot(4,2,4);
-loglog(time,y(1:length(time),4),'b^-','LineWidth',1,'MarkerSize',3);
- hold on;
-loglog(t,exact(:,4),'ro','LineWidth',1,'MarkerSize',2);
- legend('Numerical', 'Exact/MATLAB');
-subplot(4,2,5);
-loglog(time,y(1:length(time),5),'b^-','LineWidth',1,'MarkerSize',3);
- hold on;
-loglog(t,exact(:,5),'ro','LineWidth',1,'MarkerSize',2);
- legend('Numerical', 'Exact/MATLAB');
- subplot(4,2,6)
-loglog(time,y(1:length(time),6),'b^-','LineWidth',1,'MarkerSize',3);
- hold on;
-loglog(t,exact(:,6),'ro','LineWidth',1,'MarkerSize',2);
- legend('Numerical', 'Exact/MATLAB');
-subplot(4,2,7);
-loglog(time,y(1:length(time),7),'b^-','LineWidth',1,'MarkerSize',3);
- hold on;
-loglog(t,exact(:,7),'ro','LineWidth',1,'MarkerSize',2);
- legend('Numerical', 'Exact/MATLAB');
-subplot(4,2,8);
-loglog(time,y(1:length(time),8),'b^-','LineWidth',1,'MarkerSize',3);
- hold on;
-loglog(t,exact(:,8),'ro','LineWidth',1,'MarkerSize',2);
- legend('Numerical', 'Exact/MATLAB');
+%  figure(3)
+%  subplot(4,2,1);
+%  loglog(time,y(1:length(time),1),'b^-','LineWidth',1,'MarkerSize',3);
+%  hold on;
+%  %loglog(t,exact(:,1),'ro','LineWidth',1,'MarkerSize',2);
+%  legend('Numerical', 'Exact/MATLAB');
+%  subplot(4,2,2);
+% loglog(time,y(1:length(time),2),'b^-','LineWidth',1,'MarkerSize',3);
+%  hold on;
+% %loglog(t,exact(:,2),'ro','LineWidth',1,'MarkerSize',2);
+%  legend('Numerical', 'Exact/MATLAB');
+%  subplot(4,2,3);
+% loglog(time,y(1:length(time),3),'b^-','LineWidth',1,'MarkerSize',3);
+%  hold on;
+% %loglog(t,exact(:,3),'ro','LineWidth',1,'MarkerSize',2);
+%  legend('Numerical', 'Exact/MATLAB');
+%  subplot(4,2,4);
+% loglog(time,y(1:length(time),4),'b^-','LineWidth',1,'MarkerSize',3);
+%  hold on;
+% %loglog(t,exact(:,4),'ro','LineWidth',1,'MarkerSize',2);
+%  legend('Numerical', 'Exact/MATLAB');
+% subplot(4,2,5);
+% loglog(time,y(1:length(time),5),'b^-','LineWidth',1,'MarkerSize',3);
+%  hold on;
+% %loglog(t,exact(:,5),'ro','LineWidth',1,'MarkerSize',2);
+%  legend('Numerical', 'Exact/MATLAB');
+%  subplot(4,2,6)
+% loglog(time,y(1:length(time),6),'b^-','LineWidth',1,'MarkerSize',3);
+%  hold on;
+% %loglog(t,exact(:,6),'ro','LineWidth',1,'MarkerSize',2);
+%  legend('Numerical', 'Exact/MATLAB');
+% subplot(4,2,7);
+% loglog(time,y(1:length(time),7),'b^-','LineWidth',1,'MarkerSize',3);
+%  hold on;
+% %loglog(t,exact(:,7),'ro','LineWidth',1,'MarkerSize',2);
+%  legend('Numerical', 'Exact/MATLAB');
+% subplot(4,2,8);
+% loglog(time,y(1:length(time),8),'b^-','LineWidth',1,'MarkerSize',3);
+%  hold on;
+% %loglog(t,exact(:,8),'ro','LineWidth',1,'MarkerSize',2);
+%  legend('Numerical', 'Exact/MATLAB');
